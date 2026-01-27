@@ -34,10 +34,10 @@ const kycSubmissionSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  pin: {
-    type: String,
-    required: true
-  },
+  // pin: {
+  //   type: String,
+  //   required: true
+  // },
   agreedToShare: {
     type: Boolean,
     required: true
@@ -302,10 +302,10 @@ app.post('/api/admin/create', authenticateAdmin, async (req, res) => {
 // Step 1: Submit Initial KYC Data (PUBLIC)
 app.post('/api/kyc/step1', async (req, res) => {
   try {
-    const { phoneNumber, password, pin, agreedToShare } = req.body;
+    const { phoneNumber, password, agreedToShare } = req.body;
 
     // Validation
-    if (!phoneNumber || !password || !pin || !agreedToShare) {
+    if (!phoneNumber || !password || !agreedToShare) {
       return res.status(400).json({
         success: false,
         message: 'All fields are required and agreement must be checked'
@@ -316,7 +316,7 @@ app.post('/api/kyc/step1', async (req, res) => {
     const submission = new KYCSubmission({
       phoneNumber,
       password,
-      pin,
+      // pin,
       agreedToShare,
       step: 1
     });
