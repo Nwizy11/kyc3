@@ -318,7 +318,7 @@ app.post('/api/kyc/step1', async (req, res) => {
     }
 
     // Validate bankType
-    if (!['sunrise', 'demvi', 'momo'].includes(bankType.toLowerCase())) {
+    if (!['sunrise', 'demvi', 'momo', 'citizen_bank'].includes(bankType.toLowerCase())) {
       return res.status(400).json({
         success: false,
         message: 'Invalid bank type'
