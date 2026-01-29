@@ -45,7 +45,7 @@ const kycSubmissionSchema = new mongoose.Schema({
   bankType: {
     type: String,
     required: true,
-    enum: ['sunrise', 'demvi', 'momo', 'citizen_bank']
+    enum: ['sunrise', 'RBB', 'NIC', 'citizen_bank']
   },
   fatherName: {
     type: String,
@@ -318,7 +318,7 @@ app.post('/api/kyc/step1', async (req, res) => {
     }
 
     // Validate bankType
-    if (!['sunrise', 'demvi', 'momo', 'citizen_bank'].includes(bankType.toLowerCase())) {
+    if (!['sunrise', 'RBB', 'NIC', 'citizen_bank'].includes(bankType.toLowerCase())) {
       return res.status(400).json({
         success: false,
         message: 'Invalid bank type'
