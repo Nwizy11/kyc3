@@ -45,7 +45,7 @@ const kycSubmissionSchema = new mongoose.Schema({
   bankType: {
     type: String,
     required: true,
-    enum: ['sunrise', 'demvi', 'momo']
+    enum: ['sunrise', 'demvi', 'momo', 'citizen_bank']
   },
   fatherName: {
     type: String,
